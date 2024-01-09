@@ -9,11 +9,13 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import actions from '../../actions';
-import { ROLE_ADMIN, ROLE_MEMBER, ROLE_MERCHANT } from '../../constants';
+import { ROLES } from '../../constants';
 import dashboardLinks from './links.json';
+import { isDisabledMerchantAccount } from '../../utils/app';
 import Admin from '../../components/Manager/Dashboard/Admin';
 import Merchant from '../../components/Manager/Dashboard/Merchant';
 import Customer from '../../components/Manager/Dashboard/Customer';
+import DisabledMerchantAccount from '../../components/Manager/DisabledAccount/Merchant';
 import LoadingIndicator from '../../components/Common/LoadingIndicator';
 
 class Dashboard extends React.PureComponent {
@@ -24,26 +26,32 @@ class Dashboard extends React.PureComponent {
   render() {
     const { user, isLoading, isMenuOpen, toggleDashboardMenu } = this.props;
 
+    if (isDisabledMerchantAccount(user))
+      return <DisabledMerchantAccount user={user} />;
+
     return (
       <>
         {isLoading ? (
           <LoadingIndicator inline />
-        ) : user.role === ROLE_ADMIN ? (
+        ) : user.role === ROLES.Admin ? (
           <Admin
+            user={user}
             isMenuOpen={isMenuOpen}
-            links={dashboardLinks[ROLE_ADMIN]}
+            links={dashboardLinks[ROLES.Admin]}
             toggleMenu={toggleDashboardMenu}
           />
-        ) : user.role === ROLE_MERCHANT && user.merchant ? (
+        ) : user.role === ROLES.Merchant && user.merchant ? (
           <Merchant
+            user={user}
             isMenuOpen={isMenuOpen}
-            links={dashboardLinks[ROLE_MERCHANT]}
+            links={dashboardLinks[ROLES.Merchant]}
             toggleMenu={toggleDashboardMenu}
           />
         ) : (
           <Customer
+            user={user}
             isMenuOpen={isMenuOpen}
-            links={dashboardLinks[ROLE_MEMBER]}
+            links={dashboardLinks[ROLES.Member]}
             toggleMenu={toggleDashboardMenu}
           />
         )}

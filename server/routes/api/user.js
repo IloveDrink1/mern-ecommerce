@@ -3,42 +3,37 @@ const router = express.Router();
 
 // Bring in Models & Helpers
 const User = require('../../models/user');
-const Brand = require('../../models/brand');
 const auth = require('../../middleware/auth');
 const role = require('../../middleware/role');
+const { ROLES } = require('../../constants');
 
 // search users api
-router.get(
-  '/search',
-  auth,
-  role.checkRole(role.ROLES.Admin),
-  async (req, res) => {
-    try {
-      const { search } = req.query;
+router.get('/search', auth, role.check(ROLES.Admin), async (req, res) => {
+  try {
+    const { search } = req.query;
 
-      const regex = new RegExp(search, 'i');
+    const regex = new RegExp(search, 'i');
 
-      const users = await User.find(
-        {
-          $or: [
-            { firstName: { $regex: regex } },
-            { lastName: { $regex: regex } },
-            { email: { $regex: regex } }
-          ]
-        },
-        { password: 0, _id: 0 }
-      ).populate('merchant', 'name');
+    const users = await User.find(
+      {
+        $or: [
+          { firstName: { $regex: regex } },
+          { lastName: { $regex: regex } },
+          { email: { $regex: regex } }
+        ]
+      },
+      { password: 0, _id: 0 }
+    ).populate('merchant', 'name');
 
-      res.status(200).json({
-        users
-      });
-    } catch (error) {
-      res.status(400).json({
-        error: 'Your request could not be processed. Please try again.'
-      });
-    }
+    res.status(200).json({
+      users
+    });
+  } catch (error) {
+    res.status(400).json({
+      error: 'Your request could not be processed. Please try again.'
+    });
   }
-);
+});
 
 // fetch users api
 router.get('/', auth, async (req, res) => {
@@ -70,7 +65,14 @@ router.get('/', auth, async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = req.user._id;
-    const userDoc = await User.findById(user, { password: 0 });
+    const userDoc = await User.findById(user, { password: 0 }).populate({
+      path: 'merchant',
+      model: 'Merchant',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
 
     res.status(200).json({
       user: userDoc
